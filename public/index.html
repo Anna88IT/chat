@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+<body>
+<div><a href="/logout">Logout</a></div>
+<div>
+    <button class="add" id="add" onclick="addRoom()">Add room</button>
+</div>
+<div class="rooms" id="rooms">
+    <button class="room" onclick=joinGroup("general")>General</button>
+</div>
+<div id = "message_block">
+
+</div>
+<div>
+    <input id="message" type="text" class="text">
+    <button class="send" onclick="sendMessage()"> SEND </button>
+</div>
+<script  src="/socket.io/socket.io.js"></script>
+<script>
+    // import io from 'socket.io-client';
+    const socket = io('http://localhost:5000');
+    const currentRoom = "general"
+    const div = document.getElementById("rooms")
+    let i = 0;
+
+    socket.on('connect', function(){
+
+        alert(socket.id);
+    });
+    function addRoom() {
+        i++;
+        const button = document.createElement("button");
+        button.id = `room${i}`;
+        button.className="room";
+        button.innerHTML = `Room ${i}`;
+        button.onclick = joinGroup()
+        div.appendChild(button);
+
+        button.onclick = joinGroup(button.innerHTML);
+    }
+
+    function joinGroup(room) {
+        socket.emit("leaveRoom", currentRoom);
+        socket.emit("joinRoom", room);
+        clearMessages();
+        socket.emit("message", `User joined: ${room}`);
+    }
+
+    socket.on('message', (message) => {
+        const p = document.createElement("p");
+        p.innerHTML = message;
+        document.getElementById("message_block").appendChild(p);
+    });
+
+    function sendMessage() {
+        const message = document.getElementById("message").value;
+        socket.emit("message", message);
+        document.getElementById("message").value = ""
+    }
+
+    function clearMessages() {
+        document.getElementById("message_block").innerHTML = "";
+    }
+
+</script>
+</body>
+</html>
