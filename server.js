@@ -5,6 +5,7 @@ import login from "./routes/loginRoutes.js"
 import home from "./routes/homeRoutes.js"
 import dotenv from "dotenv";
 import passport from "passport"
+import passportSocketio from "passport.socketio";
 import session from "express-session";
 import {getLogout} from "./controllers/logoutController.js";
 import path, {dirname} from "path";
@@ -12,7 +13,8 @@ import {fileURLToPath} from "url";
 import http from "http";
 import {Server as SocketioServer} from "socket.io";
 import cookieParser from "cookie-parser";
-
+import {db} from "./db/mysqlConnect.js";
+import MySQLStore from 'express-mysql-session';
 
 // Get the current file's URL
 const __filename = fileURLToPath(import.meta.url);
@@ -36,7 +38,8 @@ dotenv.config();
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({extended: true}));
-// app.use(cookieParser());
+app.use(cookieParser());
+
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader(
@@ -51,31 +54,28 @@ app.use((req, res, next) => {
 });
 // app.use('/socket.io/socket.io.js', express.static(__dirname + '/node_modules/socket.io/client-dist'));
 
-// app.use(session({
-//     secret: "ajkshdfkjhaskjdhfkjahsdf",
-//     resave: false,
-//     saveUninitialized: false
-// }));
-app.use(cookieParser("ajkshdfkjhaskjdhfkjahsdf"));
 app.use(session({
+    name: 'myCustomSessionName',
     secret: "ajkshdfkjhaskjdhfkjahsdf",
     resave: false,
     saveUninitialized: false,
-    cookie: {
-        httpOnly: true, // Prevent client-side access to cookies
-        secure: true, // Enable secure cookies for HTTPS connections
-        sameSite: 'strict' // Mitigate CSRF attacks
-    }
+    // store: sessionStore
 }));
+
 const sessionMiddleware = session({
     secret: 'ajkshdfkjhaskjdhfkjahsdf',
     resave: false,
     saveUninitialized: false
 });
 
-
 app.use((req, res, next) => {
-    // console.log('Session:', req.session);
+    if (req.isAuthenticated()) {
+        // Если пользователь аутентифицирован, сохраняем его данные в cookie
+        res.cookie('user', JSON.stringify(req.user));
+    } else {
+        // Если пользователь не аутентифицирован, удаляем cookie с данными пользователя
+        res.clearCookie('user');
+    }
     next();
 });
 app.use(passport.initialize());
@@ -105,8 +105,8 @@ io.use((socket, next) => {
 })
 io.on("connection", (socket) => {
     console.log("33333")
-    const sid = socket.handshake.cookies['connect.sid'];
-    console.log(sid, "session55555")
+    // const sid = socket.handshake.cookies['connect.sid'];
+    console.log(socket.request.session, "session55555")
     if (socket.request.session.passport && socket.request.session.passport.user) {
         console.log("44444");
         const userId = socket.request.session.passport.user;

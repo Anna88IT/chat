@@ -30,12 +30,13 @@ passport.use(new passportLocal.Strategy({
             return done(null, null, {message: "incorrect email"})
         }
         if(await bcrypt.compare(password, user[0].password)) {
-            // console.log(allUsers, "all")
+            console.log(allUsers, "all")
             return done(null, user[0])
         }
 
         done(null, null, {message: "incorrect password"})
     })
+
 
 }))
 
@@ -44,6 +45,7 @@ passport.serializeUser((user, done) => {
     done(null, user.id)
 });
 passport.deserializeUser((id, done) => {
+    console.log("askjdfjksdfh")
     try {
         // console.log('Deserializing user ID:', id);
         console.log(allUsers, "des usesr");
@@ -54,7 +56,27 @@ passport.deserializeUser((id, done) => {
     }
 })
 
-export const postLogin  = passport.authenticate("local", {
+export const postLogin  = passport.authenticate("local",  {
+
     successRedirect: "/",
-    failureRedirect: "/login"
+    failureRedirect: "/local"
 });
+
+// export const postLogin  = (req, res, next) => {
+//     console.log('Inside POST /login callback')
+//     passport.authenticate('local', {
+//
+//     successRedirect: "/",
+//     failureRedirect: "/local"
+// }, (err, user, info) => {
+//         console.log('Inside passport.authenticate() callback');
+//         console.log(`req.session.passport: ${JSON.stringify(req.session.passport)}`)
+//         console.log(`req.user: ${JSON.stringify(req.user)}`)
+//         req.login(user, (err) => {
+//             console.log('Inside req.login() callback')
+//             console.log(`req.session.passport: ${JSON.stringify(req.session.passport)}`)
+//             console.log(`req.user: ${JSON.stringify(req.user)}`)
+//             return res.redirect('/');
+//         })
+//     })(req, res, next);
+// };
